@@ -1,9 +1,15 @@
 {
     "require": {
         "guzzlehttp/guzzle": "^6.3",
-        "monolog/monolog": "^1.24"
+        "monolog/monolog": "^1.24",
+        "ipip/db": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "BohanCo\\BingHomepageImage\\": "src/"
+        }
     }
 }
