@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BohanCo\BingHomepageImage\Tests;
 
 use BohanCo\BingHomepageImage\Fetcher;
-use PHPUnit\Framework\TestCase;
 use DateTime;
 use DateTimeZone;
+use PHPUnit\Framework\TestCase;
 
 final class FetcherTest extends TestCase
 {
@@ -15,24 +17,24 @@ final class FetcherTest extends TestCase
             [
                 '2019-05-31 23:59:59 Asia/Shanghai',
                 '2019-07-23 15:04:05 Asia/Shanghai',
-                53
+                53,
             ],
             [
                 '2019-07-08 23:59:59 Asia/Shanghai',
                 '2019-07-23 00:00:00 Asia/Tokyo',
-                14
+                14,
             ],
             [
                 '2019-10-27 00:00:00 Europe/London',
                 '2019-10-26 23:59:59 UTC',
-                0
+                0,
             ],
             [
                 '2019-04-04 00:00:00 Europe/London',
                 '2019-04-01 23:59:59 UTC',
-                -2
-            ]
-        ] as list($date, $today, $expected)) {
+                -2,
+            ],
+        ] as [$date, $today, $expected]) {
             $date  = DateTime::createFromFormat('Y-m-d H:i:s e', $date);
             $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
 
@@ -40,34 +42,34 @@ final class FetcherTest extends TestCase
         }
     }
 
-    public function testDateBefore()
+    public function testDateBefore() : void
     {
         foreach ([
             [
                 53,
                 new DateTimeZone('Asia/Shanghai'),
                 '2019-07-23 15:04:05 Asia/Shanghai',
-                '2019-05-31 00:00:00'
+                '2019-05-31 00:00:00',
             ],
             [
                 14,
                 new DateTimeZone('Asia/Shanghai'),
                 '2019-07-23 00:00:00 Asia/Tokyo',
-                '2019-07-08 00:00:00'
+                '2019-07-08 00:00:00',
             ],
             [
                 0,
                 new DateTimeZone('Europe/London'),
                 '2019-10-26 23:59:59 UTC',
-                '2019-10-27 00:00:00'
+                '2019-10-27 00:00:00',
             ],
             [
                 -2,
                 new DateTimeZone('Europe/London'),
                 '2019-04-01 23:59:59 UTC',
-                '2019-04-04 00:00:00'
-            ]
-        ] as list($index, $tz, $today, $expected)) {
+                '2019-04-04 00:00:00',
+            ],
+        ] as [$index, $tz, $today, $expected]) {
             $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
             $actual = Fetcher::dateBefore($index, $tz, $today);
             $this->assertSame("${expected} {$tz->getName()}", $actual->format('Y-m-d H:i:s e'));
