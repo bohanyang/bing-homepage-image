@@ -1,12 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BohanCo\BingHomepageImage;
 
+use DateInterval;
 use DateTime;
 use DateTimeZone;
-use DateInterval;
 
 use function abs;
+use function array_shift;
+use function parse_str;
+use function parse_url;
+use function preg_match;
+use function urldecode;
+
+use const PHP_URL_QUERY;
 
 class Fetcher
 {
@@ -45,7 +54,7 @@ class Fetcher
         return (int) $diff->format('%r%a');
     }
 
-    /* Get the date "$index" days before today in "$tz". */
+    /** Get the date "$index" days before today in "$tz". */
     public static function dateBefore(int $index, ?DateTimeZone $tz = null, ?DateTime $today = null) : DateTime
     {
         $today = static::getToday($tz, $today);
@@ -58,7 +67,7 @@ class Fetcher
     }
 
     /**
-     * Parse "fullstartdate" string into Carbon
+     * Parse "fullstartdate" string into DateTime
      * with correct time zone of UTC offset type.
      */
     public static function parseFullStartDate(string $fullStartDate) : DateTime
