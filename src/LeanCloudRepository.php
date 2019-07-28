@@ -67,7 +67,7 @@ class LeanCloudRepository
 
         foreach ($query->find() as $image) {
             $imageName = $image->get('name');
-            $images[$imageName] = new LeanObject('Image', $image->getObjectId());
+            $images[$imageName] = $image;
         }
 
         foreach ($map as $imageName => $list) {
