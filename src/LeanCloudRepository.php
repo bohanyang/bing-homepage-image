@@ -78,4 +78,25 @@ class LeanCloudRepository
 
         LeanObject::saveAll($archives);
     }
+
+    public function unreadyImages() : array
+    {
+        $query = new Query('Image');
+        $query->equalTo('available', false);
+        $images = [];
+        foreach ($query->find() as $image) {
+            $images[$image->get('urlbase')] = $image->get('wp');
+        }
+
+        return $images;
+    }
+
+    public function setImagesReady(array $images) : void
+    {
+        $results = (new Query('Image'))->containedIn('urlbase', $images)->find();
+        foreach ($results as $object) {
+            $object->set('available', true);
+        }
+        LeanObject::saveAll($results);
+    }
 }

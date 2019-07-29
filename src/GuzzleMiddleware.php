@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace BohanCo\BingHomepageImage;
 
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Middleware;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 final class GuzzleMiddleware
@@ -41,5 +43,27 @@ final class GuzzleMiddleware
             },
             $delay
         );
+    }
+
+    public static function downloader() : callable
+    {
+        return function (callable $handler) {
+            return function (RequestInterface $request, array $options) use ($handler) {
+                return $handler($request, $options)->then(
+                    function (ResponseInterface $response) use ($request) {
+                        $status = $response->getStatusCode();
+                        $stream = $response->getBody();
+
+                        $stream->close();
+
+                        if ($status >= 300 && $status < 400) {
+                            throw RequestException::create($request, $response);
+                        }
+
+                        return $response;
+                    }
+                );
+            };
+        };
     }
 }

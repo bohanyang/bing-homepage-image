@@ -2,3 +2,4 @@ vendor
 *.cache
 phpunit.xml
 phpcs.xml
+.vscode/launch.json
