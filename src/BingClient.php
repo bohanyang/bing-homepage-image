@@ -51,7 +51,7 @@ final class BingClient
         'en-IN' => 'Asia/Kolkata',
         'zh-CN' => 'Asia/Shanghai',
         'ja-JP' => 'Asia/Tokyo',
-        'en-AU' => 'America/Los_Angeles',
+        'en-AU' => 'Australia/Sydney',
     ];
 
     public static function getToday(?DateTimeZone $tz = null, ?DateTime $today = null) : DateTime
