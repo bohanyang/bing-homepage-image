@@ -2,12 +2,11 @@
     "name": "brentybh/bing-homepage-image",
     "require": {
         "guzzlehttp/guzzle": "^6.3",
-        "monolog/monolog": "^1.24"
+        "monolog/monolog": "^1.24",
+        "leancloud/leancloud-sdk": "^0.10.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.2",
-        "leancloud/leancloud-sdk": "^0.10.2",
-        "ipip/db": "^1.0"
+        "phpunit/phpunit": "^8.2"
     },
     "autoload": {
         "files": [
