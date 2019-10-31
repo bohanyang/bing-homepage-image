@@ -53,7 +53,7 @@ class LeanCloudRepository
                 $image->set('copyright', $copyright);
                 $image->set('available', false);
                 if (!empty($result->vid)) {
-                    $image->set('vid', $result->vid);
+                    $image->set('vid', json_encode(json_decode($result->vid, true)));
                 }
                 $images[$imageName] = $image;
                 $map[$imageName] = [];
