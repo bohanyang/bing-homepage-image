@@ -6,15 +6,20 @@ include __DIR__ . '/vendor/autoload.php';
 
 use BohanCo\BingHomepageImage\Downloader;
 use BohanCo\BingHomepageImage\LeanCloudRepository;
+use BohanCo\BingHomepageImage\LeanCloudSDK\ArrayStorage;
 use LeanCloud\Client;
 
 Client::initialize(
     getenv('LEANCLOUD_APP_ID'),
     getenv('LEANCLOUD_APP_KEY'),
-    getenv('LEANCLOUD_APP_MASTER_KEY')
+    ''
 );
 
-Client::useMasterKey(true);
+Client::useMasterKey(false);
+
+Client::setStorage(new ArrayStorage([
+    'LC_SessionToken' => getenv('LEANCLOUD_SESSION_TOKEN'),
+]));
 
 $repository = new LeanCloudRepository();
 
