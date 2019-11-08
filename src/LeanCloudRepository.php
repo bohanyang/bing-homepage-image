@@ -18,7 +18,7 @@ class LeanCloudRepository
     {
         $acl = new ACL();
         $acl->setPublicReadAccess(true);
-        $acl->setPublicWriteAccess(false);
+        $acl->setPublicWriteAccess(true);
         $this->acl = $acl;
     }
 
