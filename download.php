@@ -17,9 +17,14 @@ Client::initialize(
 
 Client::useMasterKey(false);
 
-Client::setStorage(new ArrayStorage([
-    'LC_SessionToken' => getenv('LEANCLOUD_SESSION_TOKEN'),
-]));
+Client::setStorage(new ArrayStorage());
+
+$sessionToken = getenv('LEANCLOUD_SESSION_TOKEN');
+
+if ($sessionToken !== false) {
+    Client::getStorage()->set('LC_SessionToken', $sessionToken);
+    User::become($sessionToken);
+}
 
 $repository = new LeanCloudRepository();
 
