@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BohanCo\BingHomepageImage;
 
+use Aws\S3\S3Client;
 use GuzzleHttp;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
@@ -69,7 +70,7 @@ final class Downloader
         ]);
     }
 
-    public function download(array $images) : bool
+    public function download(array $images, array $s3 = []) : bool
     {
         $promises = [];
         foreach ($images as $urlBase => $wp) {
@@ -101,6 +102,26 @@ final class Downloader
                 unlink($this->saveDir . $filename);
             }
             throw new RuntimeException('Download operation failed.');
+        }
+
+        if ($s3 !== []) {
+            $s3client = new S3Client([
+                'credentials' => [
+                    'key'    => $s3[0],
+                    'secret' => $s3[1],
+                ],
+                'endpoint' => $s3[2],
+                'region' => $s3[5],
+                'version' => '2006-03-01',
+            ]);
+            foreach (array_keys($promises) as $filename) {
+                $s3client->putObject([
+                    'Bucket' => $s3[3],
+                    'Key' => "{$s3[4]}${filename}",
+                    'SourceFile' => $this->saveDir . $filename,
+                    'CacheControl' => 'max-age=31536000',
+                ]);
+            }
         }
 
         return true;
