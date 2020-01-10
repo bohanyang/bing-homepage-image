@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace BohanCo\BingHomepageImage;
 
-use Aws\S3\S3Client;
 use GuzzleHttp;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
@@ -12,15 +11,12 @@ use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
+use League\Flysystem\Filesystem;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use RuntimeException;
-
-use function array_keys;
-use function unlink;
-
-use const CURLOPT_FOLLOWLOCATION;
 
 final class Downloader
 {
@@ -35,8 +31,8 @@ final class Downloader
 
     public const HIGH_RES = '1920x1200';
 
-    /** @var string */
-    private $saveDir;
+    /** @var Filesystem */
+    private $fs;
 
     /** @var Client */
     private $client;
@@ -45,18 +41,18 @@ final class Downloader
     private $logger;
 
     public function __construct(
-        string $saveDir,
+        Filesystem $fs,
         string $endpoint = 'https://www.bing.com/',
         ?LoggerInterface $logger = null,
         ?MessageFormatter $formatter = null
     ) {
-        $this->saveDir = $saveDir;
+        $this->fs = $fs;
         $this->logger = $logger ?? new Logger(self::class, [new StreamHandler('php://stderr')]);
 
         $formatter = $formatter ?? new MessageFormatter();
 
         $handler = new HandlerStack(GuzzleHttp\choose_handler());
-        $handler->push(GuzzleMiddleware::downloader());
+        $handler->push(GuzzleMiddleware::ensure());
         $handler->push(Middleware::httpErrors(), 'http_errors');
         $handler->push(GuzzleMiddleware::retry(function (int $status) {
             return $status === 302 || $status >= 500 || $status === 408;
@@ -66,11 +62,10 @@ final class Downloader
         $this->client = new Client([
             'handler' => $handler,
             'base_uri' => $endpoint,
-            'curl' => [CURLOPT_FOLLOWLOCATION => false],
         ]);
     }
 
-    public function download(array $images, array $s3 = []) : bool
+    public function download(array $images)
     {
         $promises = [];
         foreach ($images as $urlBase => $wp) {
@@ -80,9 +75,16 @@ final class Downloader
             }
             foreach ($sizes as $size) {
                 $filename = "${urlBase}_${size}.jpg";
+                $stream = tmpfile();
                 $promises[$filename] = $this->client->getAsync($filename, [
-                    'sink' => $this->saveDir . $filename,
-                ]);
+                    'sink' => $stream
+                ])->then(function () use ($filename, $stream) {
+                    rewind($stream);
+                    $this->fs->putStream($filename, $stream);
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
+                });
             }
         }
         $promises = Promise\settle($promises)->wait();
@@ -98,32 +100,7 @@ final class Downloader
         }
 
         if ($failed) {
-            foreach (array_keys($promises) as $filename) {
-                unlink($this->saveDir . $filename);
-            }
             throw new RuntimeException('Download operation failed.');
         }
-
-        if ($s3 !== []) {
-            $s3client = new S3Client([
-                'credentials' => [
-                    'key'    => $s3[0],
-                    'secret' => $s3[1],
-                ],
-                'endpoint' => $s3[2],
-                'region' => $s3[5],
-                'version' => '2006-03-01',
-            ]);
-            foreach (array_keys($promises) as $filename) {
-                $s3client->putObject([
-                    'Bucket' => $s3[3],
-                    'Key' => "{$s3[4]}${filename}",
-                    'SourceFile' => $this->saveDir . $filename,
-                    'CacheControl' => 'max-age=31536000',
-                ]);
-            }
-        }
-
-        return true;
     }
 }

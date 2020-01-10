@@ -45,22 +45,19 @@ final class GuzzleMiddleware
         );
     }
 
-    public static function downloader() : callable
+    public static function ensure() : callable
     {
         return function (callable $handler) {
             return function (RequestInterface $request, array $options) use ($handler) {
                 return $handler($request, $options)->then(
                     function (ResponseInterface $response) use ($request) {
                         $status = $response->getStatusCode();
-                        $stream = $response->getBody();
 
-                        $stream->close();
-
-                        if ($status >= 300 && $status < 400) {
-                            throw RequestException::create($request, $response);
+                        if ($status === 200) {
+                            return $response;
                         }
 
-                        return $response;
+                        throw RequestException::create($request, $response);
                     }
                 );
             };

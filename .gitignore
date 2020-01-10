@@ -3,4 +3,4 @@
 /phpunit.xml
 /phpcs.xml
 /.vscode/launch.json
-/composer.lock
+/.idea/
