@@ -45,6 +45,8 @@ if (!empty($images)) {
         'endpoint' => getenv('S3_ENDPOINT'),
         'region' => getenv('AWS_DEFAULT_REGION'),
         'version' => 'latest',
+        'bucket_endpoint' => false,
+        'use_path_style_endpoint' => true,
     ]);
     $localAdapter = new Local(getenv('DEST_DIR'));
     $s3Adapter = new AwsS3Adapter($client, getenv('S3_BUCKET'), getenv('S3_FOLDER'), [
