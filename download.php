@@ -8,10 +8,8 @@ use Aws\S3\S3Client;
 use BohanCo\BingHomepageImage\Downloader;
 use BohanCo\BingHomepageImage\LeanCloudRepository;
 use BohanCo\BingHomepageImage\LeanCloudSDK\ArrayStorage;
-use League\Flysystem\Adapter\Local;
 use League\Flysystem\AwsS3v3\AwsS3Adapter;
 use League\Flysystem\Filesystem;
-use League\Flysystem\Replicate\ReplicateAdapter;
 use LeanCloud\Client;
 use LeanCloud\User;
 
@@ -48,12 +46,10 @@ if (!empty($images)) {
         'bucket_endpoint' => false,
         'use_path_style_endpoint' => true,
     ]);
-    $localAdapter = new Local(getenv('DEST_DIR'));
-    $s3Adapter = new AwsS3Adapter($client, getenv('S3_BUCKET'), getenv('S3_FOLDER'), [
+    $adapter = new AwsS3Adapter($client, getenv('S3_BUCKET'), getenv('S3_FOLDER'), [
         'CacheControl' => 'max-age=31536000',
         'ACL' => ''
     ]);
-    $adapter = new ReplicateAdapter($localAdapter, $s3Adapter);
     $downloader = new Downloader(new Filesystem($adapter));
     $downloader->download($images);
     $repository->setImagesReady(array_keys($images));

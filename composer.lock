@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "868f1de6fd8d95bd1664dcc68740b4f5",
+    "content-hash": "002756426db1bcfef6ef77a2899a4080",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -409,52 +409,6 @@
             ],
             "description": "Flysystem adapter for the AWS S3 SDK v3.x",
             "time": "2019-06-05T17:18:29+00:00"
-        },
-        {
-            "name": "league/flysystem-replicate-adapter",
-            "version": "1.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/thephpleague/flysystem-replicate-adapter.git",
-                "reference": "864e80409c0918b0ed6921c3941247017d9db77c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/flysystem-replicate-adapter/zipball/864e80409c0918b0ed6921c3941247017d9db77c",
-                "reference": "864e80409c0918b0ed6921c3941247017d9db77c",
-                "shasum": ""
-            },
-            "require": {
-                "league/flysystem": "~1.0",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "0.9.*",
-                "phpunit/phpunit": "~4.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "League\\Flysystem\\Replicate\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Frank de Jonge",
-                    "email": "info@frenky.net"
-                }
-            ],
-            "description": "Flysystem adapter for Replica's",
-            "time": "2015-08-18T21:07:17+00:00"
         },
         {
             "name": "leancloud/leancloud-sdk",
