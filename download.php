@@ -13,6 +13,12 @@ use League\Flysystem\Filesystem;
 use LeanCloud\Client;
 use LeanCloud\User;
 
+$apiServer = getenv('LEANCLOUD_API_SERVER');
+
+if ($apiServer !== false) {
+    Client::setServerUrl($apiServer);
+}
+
 Client::initialize(
     getenv('LEANCLOUD_APP_ID'),
     getenv('LEANCLOUD_APP_KEY'),
