@@ -161,7 +161,7 @@ final class BingClient
      */
     public static function parseCopyright(string $copyright) : array
     {
-        $regex = '/(.+?)(?: |\x{3000})?(?:\(|\x{FF08})?\x{00A9}(?: |\x{3000})?(.+)(?:\)|\x{FF09})/u';
+        $regex = '/(.+?)(?: |\x{3000})?(?:\(|\x{FF08})?\x{00A9}(?: |\x{3000})?(.+?)(?:\)|\x{FF09})?$/u';
         $matches = [];
 
         if (preg_match($regex, $copyright, $matches) !== 1) {
