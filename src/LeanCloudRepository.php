@@ -7,7 +7,6 @@ namespace BohanYang\BingWallpaper;
 use LeanCloud\ACL;
 use LeanCloud\LeanObject;
 use LeanCloud\Query;
-use stdClass;
 
 class LeanCloudRepository
 {
@@ -33,21 +32,23 @@ class LeanCloudRepository
             $archive->setACL($this->acl);
             $archive->set('market', $result['market']);
             $archive->set('date', $result['date']->format('Ymd'));
+            $archive->set('info', $result['description']);
+            if (isset($result['link'])) {
+                $archive->set('link', $result['link']);
+            }
             if (isset($result['hotspots'])) {
                 $archive->set('hs', $result['hotspots']);
             }
             if (isset($result['messages'])) {
                 $archive->set('msg', $result['messages']);
             }
-            $archive->set('info', $result['description']);
-            $archive->set('link', $result['link']);
             if (!isset($images[$result['image']['name']])) {
                 $image = new LeanObject('Image');
                 $image->setACL($this->acl);
                 $image->set('name', $result['image']['name']);
                 $image->set('urlbase', $result['image']['urlbase']);
-                $image->set('wp', $result['image']['wp']);
                 $image->set('copyright', $result['image']['copyright']);
+                $image->set('wp', $result['image']['wp']);
                 $image->set('available', false);
                 if (isset($result['image']['vid'])) {
                     $image->set('vid', $result['image']['vid']);

@@ -305,15 +305,15 @@ final class HomepageImageArchive
      *  - date (required, DateTimeInterface)
      *  - description (required, string)
      *  - link (optional, string)
+     *  - hotspots (optional)
+     *  - messages (optional)
+     *  - coverstory (optional)
      *  - image (required)
      *      - name (required, string)
      *      - urlbase (required, string, e.g. "/az/hprichbg/rb/BemarahaNP_JA-JP15337355971")
      *      - copyright (required, string)
      *      - wp (required, boolean)
      *      - vid (optional)
-     *  - hotspots (optional)
-     *  - messages (optional)
-     *  - coverstory (optional)
      */
     private static function parseResponse(array $resp, string $market) : array
     {
