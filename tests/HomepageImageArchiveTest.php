@@ -9,7 +9,7 @@ use DateTime;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
 
-final class BingClientTest extends TestCase
+final class HomepageImageArchiveTest extends TestCase
 {
     public function testDaysAgo() : void
     {
@@ -142,7 +142,7 @@ final class BingClientTest extends TestCase
             '｢国立科学博物館｣東京, 台東区（©　WindAwake/Shutterstock）' => [
                 '｢国立科学博物館｣東京, 台東区',
                 'WindAwake/Shutterstock',
-            ],
+            ]
         ] as $copyright => $expected) {
             $actual = HomepageImageArchive::parseCopyright($copyright);
             $this->assertSame($expected, $actual);
