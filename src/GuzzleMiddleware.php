@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BohanCo\BingHomepageImage;
+namespace BohanYang\BingWallpaper;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
@@ -16,7 +16,8 @@ final class GuzzleMiddleware
         ?callable $statusDecider = null,
         int $maxRetries = 3,
         ?callable $delay = null
-    ) : callable {
+    ) : callable
+    {
         if ($statusDecider === null) {
             $statusDecider = function (int $status) {
                 return $status >= 500 || $status === 408;
@@ -40,8 +41,7 @@ final class GuzzleMiddleware
                 }
 
                 return false;
-            },
-            $delay
+            }, $delay
         );
     }
 

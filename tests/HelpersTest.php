@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BohanCo\BingHomepageImage\Tests;
+namespace BohanYang\BingWallpaper\Tests;
 
 use DateTime;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
 
-use function timezone_offset_name_get;
+use function BohanYang\BingWallpaper\timezone_offset_name_get;
 
 final class HelpersTest extends TestCase
 {

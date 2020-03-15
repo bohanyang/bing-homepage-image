@@ -1,12 +1,14 @@
 {
     "name": "brentybh/bing-homepage-image",
     "require": {
+        "ext-json": "*",
         "guzzlehttp/guzzle": "^6.3",
         "monolog/monolog": "^1.24",
         "leancloud/leancloud-sdk": "^0.10.2",
         "aws/aws-sdk-php": "^3.115",
         "league/flysystem-aws-s3-v3": "^1.0",
-        "league/flysystem": "^1.0"
+        "league/flysystem": "^1.0",
+        "beberlei/assert": "^3.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.2"
@@ -16,7 +18,7 @@
             "src/helpers.php"
         ],
         "psr-4": {
-            "BohanCo\\BingHomepageImage\\": "src/"
+            "BohanYang\\BingWallpaper\\": "src/"
         }
     }
 }

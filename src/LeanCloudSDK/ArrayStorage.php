@@ -1,6 +1,6 @@
 <?php
 
-namespace BohanCo\BingHomepageImage\LeanCloudSDK;
+namespace BohanYang\BingWallpaper\LeanCloudSDK;
 
 use LeanCloud\Storage\IStorage;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BohanCo\BingHomepageImage\Tests;
+namespace BohanYang\BingWallpaper\Tests;
 
-use BohanCo\BingHomepageImage\BingClient;
+use BohanYang\BingWallpaper\HomepageImageArchive;
 use DateTime;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
@@ -38,7 +38,7 @@ final class BingClientTest extends TestCase
             $date  = DateTime::createFromFormat('Y-m-d H:i:s e', $date);
             $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
 
-            $this->assertSame($expected, BingClient::daysAgo($date, $today));
+            $this->assertSame($expected, HomepageImageArchive::daysAgo($date, $today));
         }
     }
 
@@ -71,7 +71,7 @@ final class BingClientTest extends TestCase
             ],
         ] as [$index, $tz, $today, $expected]) {
             $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
-            $actual = BingClient::dateBefore($index, $tz, $today);
+            $actual = HomepageImageArchive::dateBefore($index, $tz, $today);
             $this->assertSame("${expected} {$tz->getName()}", $actual->format('Y-m-d H:i:s e'));
         }
     }
@@ -84,7 +84,7 @@ final class BingClientTest extends TestCase
             '201905221830' => '2019-05-23 00:00:00 +05:30',
             '201905221400' => '2019-05-23 00:00:00 +10:00',
         ] as $fullStartDate => $expected) {
-            $date = BingClient::parseFullStartDate((string) $fullStartDate);
+            $date = HomepageImageArchive::parseFullStartDate((string) $fullStartDate);
             $this->assertSame($expected, $date->format('Y-m-d H:i:s P'));
         }
     }
@@ -98,7 +98,7 @@ final class BingClientTest extends TestCase
             'http://www.bing.com/search?q=%E5%BC%80%E6%99%AE%E6%A2%85%E8%8E%BA' => '开普梅莺',
             'https://www.baidu.com/s?q=&wd=%E5%8D%8E%E4%B8%BA' => '华为',
         ] as $url => $expected) {
-            $keyword = BingClient::extractKeyword($url);
+            $keyword = HomepageImageArchive::extractKeyword($url);
             $this->assertSame($expected, $keyword);
         }
     }
@@ -109,17 +109,20 @@ final class BingClientTest extends TestCase
             '/az/hprichbg/rb/PineBough_ROW6233127332' => [
                 'PineBough_ROW6233127332',
                 'PineBough',
+                'ROW6233127332'
             ],
             '/az/hprichbg/rb/FlowerFes__JA-JP2679822467' => [
                 'FlowerFes__JA-JP2679822467',
                 'FlowerFes_',
+                'JA-JP2679822467'
             ],
             '/th?id=OHR.PingxiSky_EN-GB0458915063' => [
                 'PingxiSky_EN-GB0458915063',
                 'PingxiSky',
+                'EN-GB0458915063'
             ],
         ] as $urlBase => $expected) {
-            $actual = BingClient::parseUrlBase($urlBase);
+            $actual = HomepageImageArchive::parseUrlBase($urlBase);
             $this->assertSame($expected, $actual);
         }
     }
@@ -141,7 +144,7 @@ final class BingClientTest extends TestCase
                 'WindAwake/Shutterstock',
             ],
         ] as $copyright => $expected) {
-            $actual = BingClient::parseCopyright($copyright);
+            $actual = HomepageImageArchive::parseCopyright($copyright);
             $this->assertSame($expected, $actual);
         }
     }

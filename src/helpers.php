@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BohanCo\BingHomepageImage;
+namespace BohanYang\BingWallpaper;
 
 use DateTime;
 use DateTimeInterface;

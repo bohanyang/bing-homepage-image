@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BohanCo\BingHomepageImage;
+namespace BohanYang\BingWallpaper;
 
 use LeanCloud\ACL;
 use LeanCloud\LeanObject;
@@ -22,7 +22,6 @@ class LeanCloudRepository
         $this->acl = $acl;
     }
 
-    /** @param stdClass[] $archives */
     public function insert(array $archives) : void
     {
         $images = [];
@@ -32,35 +31,33 @@ class LeanCloudRepository
         foreach ($archives as $i => $result) {
             $archive = new LeanObject('Archive');
             $archive->setACL($this->acl);
-            $archive->set('market', $result->market);
-            $archive->set('date', $result->fullstartdate->format('Ymd'));
-            if (!empty($result->hs)) {
-                $archive->set('hs', $result->hs);
+            $archive->set('market', $result['market']);
+            $archive->set('date', $result['date']->format('Ymd'));
+            if (isset($result['hotspots'])) {
+                $archive->set('hs', $result['hotspots']);
             }
-            if (!empty($result->msg)) {
-                $archive->set('hs', $result->msg);
+            if (isset($result['messages'])) {
+                $archive->set('msg', $result['messages']);
             }
-            [$info, $copyright] = BingClient::parseCopyright($result->copyright);
-            $archive->set('info', $info);
-            $archive->set('link', $result->copyrightlink);
-            [$urlBase, $imageName] = BingClient::parseUrlBase($result->urlbase);
-            if (!isset($images[$imageName])) {
+            $archive->set('info', $result['description']);
+            $archive->set('link', $result['link']);
+            if (!isset($images[$result['image']['name']])) {
                 $image = new LeanObject('Image');
                 $image->setACL($this->acl);
-                $image->set('name', $imageName);
-                $image->set('urlbase', '/az/hprichbg/rb/' . $urlBase);
-                $image->set('wp', $result->wp);
-                $image->set('copyright', $copyright);
+                $image->set('name', $result['image']['name']);
+                $image->set('urlbase', $result['image']['urlbase']);
+                $image->set('wp', $result['image']['wp']);
+                $image->set('copyright', $result['image']['copyright']);
                 $image->set('available', false);
-                if (!empty($result->vid)) {
-                    $image->set('vid', json_decode(json_encode($result->vid), true));
+                if (isset($result['image']['vid'])) {
+                    $image->set('vid', $result['image']['vid']);
                 }
-                $images[$imageName] = $image;
-                $map[$imageName] = [];
-                $imageNames[] = $imageName;
+                $images[$result['image']['name']] = $image;
+                $map[$result['image']['name']] = [];
+                $imageNames[] = $result['image']['name'];
             }
             $archives[$i] = $archive;
-            $map[$imageName][] = $i;
+            $map[$result['image']['name']][] = $i;
         }
 
         $query = (new Query('Image'))->containedIn('name', $imageNames);

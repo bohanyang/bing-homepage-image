@@ -5,9 +5,9 @@ declare(strict_types=1);
 include __DIR__ . '/vendor/autoload.php';
 
 use Aws\S3\S3Client;
-use BohanCo\BingHomepageImage\Downloader;
-use BohanCo\BingHomepageImage\LeanCloudRepository;
-use BohanCo\BingHomepageImage\LeanCloudSDK\ArrayStorage;
+use BohanYang\BingWallpaper\Downloader;
+use BohanYang\BingWallpaper\LeanCloudRepository;
+use BohanYang\BingWallpaper\LeanCloudSDK\ArrayStorage;
 use League\Flysystem\AwsS3v3\AwsS3Adapter;
 use League\Flysystem\Filesystem;
 use LeanCloud\Client;
