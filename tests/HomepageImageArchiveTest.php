@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BohanYang\BingWallpaper\Tests;
 
 use BohanYang\BingWallpaper\HomepageImageArchive;
-use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\TestCase;
 
@@ -35,8 +35,8 @@ final class HomepageImageArchiveTest extends TestCase
                 -2,
             ],
         ] as [$date, $today, $expected]) {
-            $date  = DateTime::createFromFormat('Y-m-d H:i:s e', $date);
-            $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
+            $date  = DateTimeImmutable::createFromFormat('Y-m-d H:i:s e', $date);
+            $today = DateTimeImmutable::createFromFormat('Y-m-d H:i:s e', $today);
 
             $this->assertSame($expected, HomepageImageArchive::daysAgo($date, $today));
         }
@@ -70,7 +70,7 @@ final class HomepageImageArchiveTest extends TestCase
                 '2019-04-04 00:00:00',
             ],
         ] as [$index, $tz, $today, $expected]) {
-            $today = DateTime::createFromFormat('Y-m-d H:i:s e', $today);
+            $today = DateTimeImmutable::createFromFormat('Y-m-d H:i:s e', $today);
             $actual = HomepageImageArchive::dateBefore($index, $tz, $today);
             $this->assertSame("${expected} {$tz->getName()}", $actual->format('Y-m-d H:i:s e'));
         }
@@ -86,6 +86,35 @@ final class HomepageImageArchiveTest extends TestCase
         ] as $fullStartDate => $expected) {
             $date = HomepageImageArchive::parseFullStartDate((string) $fullStartDate);
             $this->assertSame($expected, $date->format('Y-m-d H:i:s P'));
+        }
+    }
+
+    public function testHasBecomeTheLaterDate() : void
+    {
+        foreach ([
+            [
+                new DateTimeZone('Australia/Sydney'),
+                new DateTimeImmutable('2020-03-16 22:00:00', new DateTimeZone('Asia/Tokyo')),
+                true
+            ],
+            [
+                new DateTimeZone('Australia/Sydney'),
+                new DateTimeImmutable('2020-03-16 21:59:59', new DateTimeZone('Asia/Tokyo')),
+                false
+            ],
+            [
+                new DateTimeZone('Asia/Shanghai'),
+                new DateTimeImmutable('2020-03-17 01:00:00', new DateTimeZone('Asia/Tokyo')),
+                true
+            ],
+            [
+                new DateTimeZone('Asia/Shanghai'),
+                new DateTimeImmutable('2020-03-17 00:59:59', new DateTimeZone('Asia/Tokyo')),
+                false
+            ]
+        ] as $testCase) {
+            [$tz, $now, $expected] = $testCase;
+            $this->assertSame($expected, HomepageImageArchive::hasBecomeTheLaterDate($tz, $now));
         }
     }
 

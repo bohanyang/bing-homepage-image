@@ -6,7 +6,7 @@ namespace BohanYang\BingWallpaper;
 
 use Assert\Assertion;
 use DateInterval;
-use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use GuzzleHttp;
@@ -40,27 +40,107 @@ use const PHP_URL_QUERY;
 final class HomepageImageArchive
 {
     public const TIMEZONES = [
-        'ROW' => 'America/Los_Angeles',
+        'ROW' => 'America/Los_Angeles', // UTC -8 / UTC -7
         'en-US' => 'America/Los_Angeles',
         'pt-BR' => 'America/Los_Angeles',
-        'en-CA' => 'America/Toronto',
+        'en-CA' => 'America/Toronto', // UTC -5 / UTC -4
         'fr-CA' => 'America/Toronto',
-        'en-GB' => 'Europe/London',
-        'fr-FR' => 'Europe/Paris',
+        'en-GB' => 'Europe/London', // UTC +0 / UTC +1
+        'fr-FR' => 'Europe/Paris', // UTC +1 / UTC +2
         'de-DE' => 'Europe/Berlin',
-        'en-IN' => 'Asia/Kolkata',
-        'zh-CN' => 'Asia/Shanghai',
-        'ja-JP' => 'Asia/Tokyo',
-        'en-AU' => 'Australia/Sydney',
+        'en-IN' => 'Asia/Kolkata', // UTC +5:30
+        'zh-CN' => 'Asia/Shanghai', // UTC +8
+        'ja-JP' => 'Asia/Tokyo', // UTC +9
+        'en-AU' => 'Australia/Sydney', // UTC +10 / UTC +11
     ];
 
-    public static function getToday(?DateTimeZone $tz = null, ?DateTime $today = null) : DateTime
+    public static function hasBecomeTheLaterDate(DateTimeZone $tz, ?DateTimeImmutable $now = null) : bool
     {
-        if ($today !== null) {
-            $tz = $tz ?? $today->getTimezone();
-            $today->setTimezone($tz)->setTime(0, 0, 0);
+        $now = self::getCurrentUTC($now);
+        $offset = self::getMidnightOffset($now, self::getTheLaterDate($now));
+        return self::compareWithMidnightOffset($tz, $now, $offset);
+    }
+
+    /**
+     * @param array $markets
+     * @param DateTimeImmutable $now Current UTC
+     * @param int $offset
+     * @return array
+     */
+    public static function getMarketsHaveBecomeTheLaterDate(array $markets, DateTimeImmutable $now, int $offset) : array
+    {
+        $timezones = [];
+        $tzHasBecome = [];
+        $results = [];
+        foreach ($markets as $market) {
+            if (!isset(self::TIMEZONES[$market])) {
+                new InvalidArgumentException('Timezone is unknown for market ' . $market);
+            }
+            $tz = self::TIMEZONES[$market];
+            if (!isset($timezones[$tz])) {
+                $timezones[$tz] = new DateTimeZone($tz);
+                $tzHasBecome[$tz] = self::compareWithMidnightOffset($timezones[$tz], $now, $offset);
+            }
+            if ($tzHasBecome[$tz]) {
+                $results[0][] = $market;
+                $results[1][$market] = $timezones[$tz];
+            }
+        }
+        return $results;
+    }
+
+    public static function getCurrentUTC(?DateTimeImmutable $now = null) : DateTimeImmutable
+    {
+        $utc = new DateTimeZone('UTC');
+        return $now === null ?
+            new DateTimeImmutable('now', $utc) :
+            $now->setTimezone($utc)
+        ;
+    }
+
+    public static function getTheLaterDate(DateTimeImmutable $now) : DateTimeImmutable
+    {
+        if ((int) $now->format('G') < 12) {
+            // For timezones later than UTC (have an earlier date),
+            // the moment of date change is 00:00 on today's date of UTC
+            return $now->setTime(0, 0, 0);
         } else {
-            $today = new DateTime('today', $tz);
+            // For timezones earlier than UTC (have an later date),
+            // the moment of date change is 00:00 on tomorrow's date of UTC
+            return $now->modify('+1 day midnight');
+        }
+    }
+
+    /**
+     * @param DateTimeImmutable $now Current UTC
+     * @param DateTimeImmutable $d The later date
+     */
+    public static function getMidnightOffset(DateTimeImmutable $now, DateTimeImmutable $d) : int
+    {
+        // General solution:
+        // $now->diff($the_moment_of_date_change)
+        // which is equivalent to
+        // $the_moment_of_date_change - $now
+        return $d->getTimestamp() - $now->getTimestamp();
+    }
+
+    /**
+     * @param DateTimeZone $tz Timezone to be compared
+     * @param DateTimeImmutable $now Current UTC
+     * @param int $offset Midnight offset
+     */
+    private static function compareWithMidnightOffset(DateTimeZone $tz, DateTimeImmutable $now, int $offset) : bool
+    {
+        return (int) $now->setTimezone($tz)->format('Z') >= $offset;
+    }
+
+    public static function getToday(?DateTimeZone $tz = null, ?DateTimeImmutable $today = null) : DateTimeImmutable
+    {
+        if ($today === null) {
+            $today = new DateTimeImmutable('today', $tz);
+        } else {
+            $tz = $tz ?? $today->getTimezone();
+            $today = $today->setTimezone($tz)->setTime(0, 0, 0);
         }
 
         return $today;
@@ -69,7 +149,7 @@ final class HomepageImageArchive
     /**
      * Get how many days ago was "$date".
      */
-    public static function daysAgo(DateTime $date, ?DateTime $today = null) : int
+    public static function daysAgo(DateTimeImmutable $date, ?DateTimeImmutable $today = null) : int
     {
         $today = self::getToday($date->getTimezone(), $today);
         $diff = $date->setTime(0, 0, 0)->diff($today, false);
@@ -80,7 +160,7 @@ final class HomepageImageArchive
     /**
      * Get the date "$index" days before today in "$tz".
      */
-    public static function dateBefore(int $index, ?DateTimeZone $tz = null, ?DateTime $today = null) : DateTime
+    public static function dateBefore(int $index, ?DateTimeZone $tz = null, ?DateTimeImmutable $today = null) : DateTimeImmutable
     {
         $today = self::getToday($tz, $today);
         $invert = $index < 0 ? 1 : 0;
@@ -95,23 +175,33 @@ final class HomepageImageArchive
      * Parse "fullstartdate" string into DateTime
      * with correct time zone of UTC offset type.
      */
-    public static function parseFullStartDate(string $fullStartDate) : DateTime
+    public static function parseFullStartDate(string $fullStartDate) : DateTimeImmutable
     {
-        $d = DateTime::createFromFormat('YmdHi', $fullStartDate, new DateTimeZone('UTC'));
+        $d = DateTimeImmutable::createFromFormat('YmdHi', $fullStartDate, new DateTimeZone('UTC'));
 
         if ($d === false) {
             throw new InvalidArgumentException("Failed to parse full start date ${fullStartDate}.");
         }
 
         if ((int) $d->format('G') < 12) {
+            // The moment of date change is the new date's 00:00
+            // and UTC is on the new date.
+            // Therefore, the timezone just reached the new date's 00:00
+            // (just changed its date / just becomes the next day)
+            // is slower than UTC.
             $tz = '-' . $d->format('H:i');
         } else {
-            $d24 = (clone $d)->modify('+1 day midnight');
+            // But when UTC becomes 12:00, all UTC -* timezones
+            // (the west side of the prime meridian)
+            // already changed their date.
+            // The fastest UTC +12 becomes the next new date
+            // (tomorrow's date of UTC).
+            $d24 = $d->modify('+1 day midnight');
             $tz = $d->diff($d24, true)->format('%R%H:%I');
             $d = $d24;
         }
 
-        return new DateTime($d->format('Y-m-d'), new DateTimeZone($tz));
+        return new DateTimeImmutable($d->format('Y-m-d'), new DateTimeZone($tz));
     }
 
     /**
@@ -233,14 +323,14 @@ final class HomepageImageArchive
         if ($tz === null) {
             if (!isset(self::TIMEZONES[$market])) {
                 return new RejectedPromise(new InvalidArgumentException(
-                    'Unknown market with no timezone provided.'
+                    'Market is unknown and no timezone provided'
                 ));
             }
 
             $tz = new DateTimeZone(self::TIMEZONES[$market]);
         }
 
-        $date = $date ? new DateTime($date->format('Y-m-d'), $tz) : self::getToday($tz);
+        $date = $date ? new DateTimeImmutable($date->format('Y-m-d'), $tz) : self::getToday($tz);
         $offset = self::daysAgo($date);
         $date = $date->format('Y-m-d');
 
@@ -302,7 +392,7 @@ final class HomepageImageArchive
     /**
      * @return array Result structure:
      *  - market (required, string)
-     *  - date (required, DateTimeInterface)
+     *  - date (required, DateTimeImmutable)
      *  - description (required, string)
      *  - link (optional, string)
      *  - hotspots (optional)
@@ -321,7 +411,7 @@ final class HomepageImageArchive
         $result['market'] = $market;
 
         foreach (self::REQUIRED_FIELDS as $field) {
-            if (empty($resp[$field])) {
+            if (!isset($resp[$field]) || $resp[$field] === '') {
                 throw new InvalidArgumentException("Required field $field does not exist in response");
             }
         }
@@ -356,7 +446,7 @@ final class HomepageImageArchive
         return $result;
     }
 
-    public function fetch(string $market, ?DateTime $date = null, ?DateTimeZone $tz = null) : array
+    public function fetch(string $market, ?DateTimeInterface $date = null, ?DateTimeZone $tz = null) : array
     {
         try {
             $result = $this->get($market, $date, $tz)->wait();

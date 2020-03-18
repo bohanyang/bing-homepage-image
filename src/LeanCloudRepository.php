@@ -21,13 +21,13 @@ class LeanCloudRepository
         $this->acl = $acl;
     }
 
-    public function insert(array $archives) : void
+    public function insert(array $results) : bool
     {
         $images = [];
         $map = [];
         $imageNames = [];
 
-        foreach ($archives as $i => $result) {
+        foreach ($results as $i => $result) {
             $archive = new LeanObject('Archive');
             $archive->setACL($this->acl);
             $archive->set('market', $result['market']);
@@ -57,7 +57,7 @@ class LeanCloudRepository
                 $map[$result['image']['name']] = [];
                 $imageNames[] = $result['image']['name'];
             }
-            $archives[$i] = $archive;
+            $results[$i] = $archive;
             $map[$result['image']['name']][] = $i;
         }
 
@@ -70,11 +70,13 @@ class LeanCloudRepository
 
         foreach ($map as $imageName => $list) {
             foreach ($list as $i) {
-                $archives[$i]->set('image', $images[$imageName]);
+                $results[$i]->set('image', $images[$imageName]);
             }
         }
 
-        LeanObject::saveAll($archives);
+        LeanObject::saveAll($results);
+
+        return true;
     }
 
     public function unreadyImages() : array
