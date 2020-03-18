@@ -336,7 +336,7 @@ final class HomepageImageArchive
 
         if ($offset < 0 || $offset > 7) {
             return new RejectedPromise(new InvalidArgumentException(
-                "The date ${$date} in timezone {$tz->getName()} (UTC" .
+                "The date ${date} in timezone {$tz->getName()} (UTC" .
                 timezone_offset_name_get($tz) .
                 ") has offset ${offset} which is out of the available range (0 to 7)."
             ));
