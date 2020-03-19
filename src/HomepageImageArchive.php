@@ -29,7 +29,7 @@ use function GuzzleHttp\Promise\unwrap;
 use function parse_str;
 use function parse_url;
 use function Safe\json_decode;
-use function Safe\preg_match as preg_match;
+use function Safe\preg_match;
 use function urldecode;
 
 use const PHP_URL_QUERY;
