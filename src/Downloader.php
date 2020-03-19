@@ -17,6 +17,9 @@ use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use RuntimeException;
+use function Safe\fclose as fclose;
+use function Safe\rewind as rewind;
+use function Safe\tmpfile as tmpfile;
 
 final class Downloader
 {
@@ -45,7 +48,8 @@ final class Downloader
         string $endpoint = 'https://www.bing.com/',
         ?LoggerInterface $logger = null,
         ?MessageFormatter $formatter = null
-    ) {
+    )
+    {
         $this->fs = $fs;
         $this->logger = $logger ?? new Logger(self::class, [new StreamHandler('php://stderr')]);
 

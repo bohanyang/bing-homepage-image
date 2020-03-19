@@ -12,11 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 
 final class GuzzleMiddleware
 {
-    public static function retry(
-        ?callable $statusDecider = null,
-        int $maxRetries = 3,
-        ?callable $delay = null
-    ) : callable
+    public static function retry(callable $statusDecider = null, int $maxRetries = 3, callable $delay = null) : callable
     {
         if ($statusDecider === null) {
             $statusDecider = function (int $status) {
@@ -25,7 +21,10 @@ final class GuzzleMiddleware
         }
 
         return Middleware::retry(
-            function ($retries, $request, ?ResponseInterface $response, $reason) use ($maxRetries, $statusDecider) : bool {
+            function ($retries, $request, ?ResponseInterface $response, $reason) use (
+                $maxRetries,
+                $statusDecider
+            ) : bool {
                 if ($retries >= $maxRetries) {
                     return false;
                 }
@@ -41,7 +40,8 @@ final class GuzzleMiddleware
                 }
 
                 return false;
-            }, $delay
+            },
+            $delay
         );
     }
 

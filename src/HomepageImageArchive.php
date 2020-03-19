@@ -7,14 +7,13 @@ namespace BohanYang\BingWallpaper;
 use Assert\Assertion;
 use DateInterval;
 use DateTimeImmutable;
-use DateTimeInterface;
 use DateTimeZone;
+use Exception;
 use GuzzleHttp;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\MessageFormatter;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\RejectedPromise;
 use InvalidArgumentException;
@@ -23,16 +22,14 @@ use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use RuntimeException;
-use Throwable;
-use UnexpectedValueException;
 
 use function abs;
 use function array_shift;
-use function json_decode;
+use function GuzzleHttp\Promise\unwrap;
 use function parse_str;
 use function parse_url;
-use function preg_match;
+use function Safe\json_decode;
+use function Safe\preg_match as preg_match;
 use function urldecode;
 
 use const PHP_URL_QUERY;
@@ -40,33 +37,28 @@ use const PHP_URL_QUERY;
 final class HomepageImageArchive
 {
     public const TIMEZONES = [
-        'ROW' => 'America/Los_Angeles', // UTC -8 / UTC -7
+        'ROW' => 'America/Los_Angeles',   // UTC -8 / UTC -7
         'en-US' => 'America/Los_Angeles',
         'pt-BR' => 'America/Los_Angeles',
-        'en-CA' => 'America/Toronto', // UTC -5 / UTC -4
+        'en-CA' => 'America/Toronto',    // UTC -5 / UTC -4
         'fr-CA' => 'America/Toronto',
-        'en-GB' => 'Europe/London', // UTC +0 / UTC +1
-        'fr-FR' => 'Europe/Paris', // UTC +1 / UTC +2
+        'en-GB' => 'Europe/London',      // UTC +0 / UTC +1
+        'fr-FR' => 'Europe/Paris',       // UTC +1 / UTC +2
         'de-DE' => 'Europe/Berlin',
-        'en-IN' => 'Asia/Kolkata', // UTC +5:30
-        'zh-CN' => 'Asia/Shanghai', // UTC +8
-        'ja-JP' => 'Asia/Tokyo', // UTC +9
-        'en-AU' => 'Australia/Sydney', // UTC +10 / UTC +11
+        'en-IN' => 'Asia/Kolkata',       // UTC +5:30
+        'zh-CN' => 'Asia/Shanghai',      // UTC +8
+        'ja-JP' => 'Asia/Tokyo',         // UTC +9
+        'en-AU' => 'Australia/Sydney',   // UTC +10 / UTC +11
     ];
 
-    public static function hasBecomeTheLaterDate(DateTimeZone $tz, ?DateTimeImmutable $now = null) : bool
+    public static function hasBecomeTheLaterDate(DateTimeZone $tz, DateTimeImmutable $now = null) : bool
     {
         $now = self::getCurrentUTC($now);
         $offset = self::getMidnightOffset($now, self::getTheLaterDate($now));
         return self::compareWithMidnightOffset($tz, $now, $offset);
     }
 
-    /**
-     * @param array $markets
-     * @param DateTimeImmutable $now Current UTC
-     * @param int $offset
-     * @return array
-     */
+    /** @param DateTimeImmutable $now Current UTC */
     public static function getMarketsHaveBecomeTheLaterDate(array $markets, DateTimeImmutable $now, int $offset) : array
     {
         $timezones = [];
@@ -89,13 +81,12 @@ final class HomepageImageArchive
         return $results;
     }
 
-    public static function getCurrentUTC(?DateTimeImmutable $now = null) : DateTimeImmutable
+    public static function getCurrentUTC(DateTimeImmutable $now = null) : DateTimeImmutable
     {
         $utc = new DateTimeZone('UTC');
         return $now === null ?
             new DateTimeImmutable('now', $utc) :
-            $now->setTimezone($utc)
-        ;
+            $now->setTimezone($utc);
     }
 
     public static function getTheLaterDate(DateTimeImmutable $now) : DateTimeImmutable
@@ -124,17 +115,13 @@ final class HomepageImageArchive
         return $d->getTimestamp() - $now->getTimestamp();
     }
 
-    /**
-     * @param DateTimeZone $tz Timezone to be compared
-     * @param DateTimeImmutable $now Current UTC
-     * @param int $offset Midnight offset
-     */
+    /** @param DateTimeImmutable $now Current UTC */
     private static function compareWithMidnightOffset(DateTimeZone $tz, DateTimeImmutable $now, int $offset) : bool
     {
         return (int) $now->setTimezone($tz)->format('Z') >= $offset;
     }
 
-    public static function getToday(?DateTimeZone $tz = null, ?DateTimeImmutable $today = null) : DateTimeImmutable
+    public static function getToday(?DateTimeZone $tz = null, DateTimeImmutable $today = null) : DateTimeImmutable
     {
         if ($today === null) {
             $today = new DateTimeImmutable('today', $tz);
@@ -146,10 +133,8 @@ final class HomepageImageArchive
         return $today;
     }
 
-    /**
-     * Get how many days ago was "$date".
-     */
-    public static function daysAgo(DateTimeImmutable $date, ?DateTimeImmutable $today = null) : int
+    /** Get how many days ago was "$date" */
+    public static function daysAgo(DateTimeImmutable $date, DateTimeImmutable $today = null) : int
     {
         $today = self::getToday($date->getTimezone(), $today);
         $diff = $date->setTime(0, 0, 0)->diff($today, false);
@@ -157,11 +142,8 @@ final class HomepageImageArchive
         return (int) $diff->format('%r%a');
     }
 
-    /**
-     * Get the date "$index" days before today in "$tz".
-     */
-    public static function dateBefore(int $index, ?DateTimeZone $tz = null, ?DateTimeImmutable $today = null) : DateTimeImmutable
-    {
+    /** Get the date "$index" days before today in "$tz" */
+    public static function dateBefore(int $index, DateTimeZone $tz = null, DateTimeImmutable $today = null) : DateTimeImmutable {
         $today = self::getToday($tz, $today);
         $invert = $index < 0 ? 1 : 0;
         $index = (string) abs($index);
@@ -171,16 +153,13 @@ final class HomepageImageArchive
         return $today->sub($interval);
     }
 
-    /**
-     * Parse "fullstartdate" string into DateTime
-     * with correct time zone of UTC offset type.
-     */
+    /** Parse "fullstartdate" string into DateTime with correct time zone of UTC offset type */
     public static function parseFullStartDate(string $fullStartDate) : DateTimeImmutable
     {
         $d = DateTimeImmutable::createFromFormat('YmdHi', $fullStartDate, new DateTimeZone('UTC'));
 
         if ($d === false) {
-            throw new InvalidArgumentException("Failed to parse full start date ${fullStartDate}.");
+            throw new InvalidArgumentException("Failed to parse full start date ${fullStartDate}");
         }
 
         if ((int) $d->format('G') < 12) {
@@ -204,10 +183,7 @@ final class HomepageImageArchive
         return new DateTimeImmutable($d->format('Y-m-d'), new DateTimeZone($tz));
     }
 
-    /**
-     * Parse an URL of web search engine and
-     * extract keyword from its query string.
-     */
+    /** Parse an URL of web search engine and extract keyword from its query string */
     public static function extractKeyword(string $url) : ?string
     {
         $query = parse_url($url, PHP_URL_QUERY);
@@ -230,7 +206,7 @@ final class HomepageImageArchive
     }
 
     /**
-     * Normalize "urlbase" and extract image name from it.
+     * Normalize "urlbase" and extract image name from it
      *
      * @param string $urlBase e.g.
      *  "/az/hprichbg/rb/BemarahaNP_JA-JP15337355971" or
@@ -249,7 +225,7 @@ final class HomepageImageArchive
         $matches = [];
 
         if (preg_match($regex, $urlBase, $matches) !== 1) {
-            throw new InvalidArgumentException("Failed to parse URL base ${urlBase}.");
+            throw new InvalidArgumentException("Failed to parse URL base ${urlBase}");
         }
 
         return $matches;
@@ -257,7 +233,7 @@ final class HomepageImageArchive
 
     /**
      * Extract image description as well as the author and/or
-     * the stock photo agency from "copyright" string.
+     * the stock photo agency from "copyright" string
      *
      * @return string[] [$description, $copyright]
      */
@@ -267,7 +243,7 @@ final class HomepageImageArchive
         $matches = [];
 
         if (preg_match($regex, $copyright, $matches) !== 1) {
-            throw new InvalidArgumentException("Failed to parse copyright string ${copyright}.");
+            throw new InvalidArgumentException("Failed to parse copyright string ${copyright}");
         }
 
         array_shift($matches);
@@ -289,8 +265,7 @@ final class HomepageImageArchive
         ?LoggerInterface $logger = null,
         ?callable $handler = null,
         ?MessageFormatter $formatter = null
-    )
-    {
+    ) {
         $this->endpoint = $endpoint;
         $this->logger = $logger ?? new Logger(self::class, [new StreamHandler('php://stderr')]);
         $handler = $handler ?? GuzzleHttp\choose_handler();
@@ -307,24 +282,27 @@ final class HomepageImageArchive
 
     private function request(string $market, int $index = 0, int $n = 1) : PromiseInterface
     {
-        return $this->client->getAsync($this->endpoint, [
-            'query' => [
-                'format' => 'js',
-                'idx' => (string) $index,
-                'n' => (string) $n,
-                'video' => '1',
-                'mkt' => $market,
-            ],
-        ]);
+        return $this->client->getAsync(
+            $this->endpoint,
+            [
+                'query' => [
+                    'format' => 'js',
+                    'idx' => (string) $index,
+                    'n' => (string) $n,
+                    'video' => '1',
+                    'mkt' => $market,
+                ],
+            ]
+        );
     }
 
-    private function get(string $market, ?DateTimeInterface $date = null, ?DateTimeZone $tz = null) : PromiseInterface
+    private function get(string $market, ?DateTimeImmutable $date = null, ?DateTimeZone $tz = null) : PromiseInterface
     {
         if ($tz === null) {
             if (!isset(self::TIMEZONES[$market])) {
-                return new RejectedPromise(new InvalidArgumentException(
-                    'Market is unknown and no timezone provided'
-                ));
+                return new RejectedPromise(
+                    new FetchArchiveFailure('Market is unknown and no timezone provided', $market)
+                );
             }
 
             $tz = new DateTimeZone(self::TIMEZONES[$market]);
@@ -332,48 +310,46 @@ final class HomepageImageArchive
 
         $date = $date ? new DateTimeImmutable($date->format('Y-m-d'), $tz) : self::getToday($tz);
         $offset = self::daysAgo($date);
-        $date = $date->format('Y-m-d');
 
         if ($offset < 0 || $offset > 7) {
-            return new RejectedPromise(new InvalidArgumentException(
-                "The date ${date} in timezone {$tz->getName()} (UTC" .
-                timezone_offset_name_get($tz) .
-                ") has offset ${offset} which is out of the available range (0 to 7)."
-            ));
+            return new RejectedPromise(
+                new FetchArchiveFailure('Offset is out of the available range (0 to 7)', $market, $date, $offset)
+            );
         }
 
         return $this->request($market, $offset)->then(
-            static function (ResponseInterface $resp) use ($market, $date, $offset) {
-                $resp = (string) $resp->getBody();
-                $resp = json_decode($resp, true);
-                if (
-                    json_last_error() !== JSON_ERROR_NONE ||
-                    empty($resp['images'][0])
-                ) {
-                    throw new UnexpectedValueException(
-                        "Failed to parse JSON response on date ${date} (offset ${offset}})",
-                        json_last_error()
-                    );
+            function (ResponseInterface $resp) use ($market, $date, $offset) {
+                $resp = json_decode($resp->getBody()->__toString(), true);
+                if (empty($resp['images'][0])) {
+                    throw new FetchArchiveFailure('Got empty response', $market, $date, $offset);
                 }
 
                 try {
                     $resp = self::parseResponse($resp['images'][0], $market);
-                } catch (Throwable $e) {
-                    throw new UnexpectedValueException(
-                        "Failed to parse response on date ${date} (offset ${offset})",
-                        0,
+                } catch (Exception $e) {
+                    throw new FetchArchiveFailure(
+                        'Failed to parse response: ' . $e->getMessage(),
+                        $market,
+                        $date,
+                        $offset,
+                        null,
                         $e
                     );
                 }
 
-                $actualDate = $resp['date']->format('Y-m-d');
+                if ($resp['date']->format('Y-m-d') !== $date->format('Y-m-d')) {
+                    throw new FetchArchiveFailure('Got unexpected date', $market, $date, $offset, $resp['date']);
+                }
 
-                if ($actualDate !== $date) {
-                    throw new UnexpectedValueException(
-                        "Got unexpected date ${actualDate} (UTC" .
-                        timezone_offset_name_get($resp['date']->getTimezone()) .
-                        ") instead of ${date} (offset ${offset})."
+                if ($resp['date']->format('Z') !== $date->format('Z')) {
+                    $e = new FetchArchiveFailure(
+                        'The actual timezone offset differs from expected',
+                        $market,
+                        $date,
+                        $offset,
+                        $resp['date']
                     );
+                    $this->logger->warning($e->getMessage());
                 }
 
                 return $resp;
@@ -405,14 +381,14 @@ final class HomepageImageArchive
      *      - wp (required, boolean)
      *      - vid (optional)
      */
-    private static function parseResponse(array $resp, string $market) : array
+    private static function parseResponse(array $resp, string $market)
     {
         $result = [];
         $result['market'] = $market;
 
         foreach (self::REQUIRED_FIELDS as $field) {
-            if (!isset($resp[$field]) || $resp[$field] === '') {
-                throw new InvalidArgumentException("Required field $field does not exist in response");
+            if (empty($resp[$field]) && $resp[$field] !== false) {
+                throw new InvalidArgumentException("Required field ${field} is empty");
             }
         }
 
@@ -446,22 +422,12 @@ final class HomepageImageArchive
         return $result;
     }
 
-    public function fetch(string $market, ?DateTimeInterface $date = null, ?DateTimeZone $tz = null) : array
+    public function fetch(string $market, DateTimeImmutable $date = null, DateTimeZone $tz = null)
     {
-        try {
-            $result = $this->get($market, $date, $tz)->wait();
-        } catch (Throwable $e) {
-            $this->logger->log(
-                LogLevel::CRITICAL,
-                "Error occurred while fetching for market ${market}: " . (string) $e
-            );
-            throw $e;
-        }
-
-        return $result;
+        return $this->get($market, $date, $tz)->wait();
     }
 
-    public function batch(iterable $markets, ?DateTimeInterface $date = null)
+    public function batch(array $markets, DateTimeImmutable $date = null)
     {
         $date = $date ?? self::getToday(new DateTimeZone('America/Los_Angeles'));
 
@@ -472,26 +438,8 @@ final class HomepageImageArchive
             $promises[$market] = $this->get($market, $date);
         }
 
-        $promises = Promise\settle($promises)->wait();
-        $results = [];
-        $failed = false;
+        $promises = unwrap($promises);
 
-        foreach ($promises as $market => $promise) {
-            if ($promise['state'] === PromiseInterface::FULFILLED) {
-                $results[$market] = $promise['value'];
-            } else {
-                $failed = true;
-                $this->logger->log(
-                    LogLevel::CRITICAL,
-                    "Error occurred while fetching for market ${market}: " . (string) $promise['reason']
-                );
-            }
-        }
-
-        if ($failed) {
-            throw new RuntimeException('Batch operation failed.');
-        }
-
-        return $results;
+        return $promises;
     }
 }
