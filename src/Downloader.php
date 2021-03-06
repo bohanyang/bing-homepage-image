@@ -44,6 +44,9 @@ final class Downloader
     /** @var LoggerInterface */
     private $logger;
 
+    /** @var string */
+    private $endpoint;
+
     public function __construct(
         Filesystem $fs,
         string $endpoint = 'https://www.bing.com/th?id=OHR.',
@@ -63,6 +66,8 @@ final class Downloader
             return $status === 302 || $status >= 500 || $status === 408;
         }), 'retry');
         $handler->push(Middleware::log($this->logger, $formatter, LogLevel::DEBUG));
+
+        $this->endpoint = $endpoint;
 
         $this->client = new Client([
             'handler' => $handler,
