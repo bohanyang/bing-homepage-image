@@ -30,6 +30,7 @@ final class Downloader
         '768x1280',
         '800x480',
         '480x800',
+        'UHD'
     ];
 
     public const HIGH_RES = '1920x1200';
@@ -45,7 +46,7 @@ final class Downloader
 
     public function __construct(
         Filesystem $fs,
-        string $endpoint = 'https://www.bing.com/',
+        string $endpoint = 'https://www.bing.com/th?id=OHR.',
         ?LoggerInterface $logger = null,
         ?MessageFormatter $formatter = null
     )
@@ -73,6 +74,7 @@ final class Downloader
     {
         $promises = [];
         foreach ($images as $urlBase => $wp) {
+            $urlBase = substr($urlBase, 16);
             $sizes = self::DEFAULT_SIZES;
             if ($wp) {
                 $sizes[] = self::HIGH_RES;

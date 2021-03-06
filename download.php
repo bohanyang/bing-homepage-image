@@ -54,6 +54,7 @@ if (!empty($images)) {
     ]);
     $adapter = new AwsS3Adapter($client, getenv('S3_BUCKET'), getenv('S3_FOLDER'), [
         'CacheControl' => 'max-age=31536000',
+        'ContentType' => 'image/jpeg',
         'ACL' => ''
     ]);
     $downloader = new Downloader(new Filesystem($adapter));
