@@ -86,6 +86,9 @@ final class Downloader
                 ])->then(function () use ($filename, $stream) {
                     rewind($stream);
                     $this->fs->putStream($filename, $stream);
+                    if (is_resource($stream)) {
+                        fclose($stream);
+                    }
                 });
             }
         }
