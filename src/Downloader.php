@@ -66,7 +66,6 @@ final class Downloader
 
         $this->client = new Client([
             'handler' => $handler,
-            'base_uri' => $endpoint,
         ]);
     }
 
@@ -82,7 +81,7 @@ final class Downloader
             foreach ($sizes as $size) {
                 $filename = "${urlBase}_${size}.jpg";
                 $stream = tmpfile();
-                $promises[$filename] = $this->client->getAsync($filename, [
+                $promises[$filename] = $this->client->getAsync($endpoint . $filename, [
                     'sink' => $stream
                 ])->then(function () use ($filename, $stream) {
                     rewind($stream);
